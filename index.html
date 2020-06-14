@@ -14,10 +14,16 @@
 <!-- Compiled and minified JavaScript -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 
+<!-- Icons -->
+<link
+  href="https://fonts.googleapis.com/icon?family=Material+Icons"
+  rel="stylesheet"
+/>
+
 <div style="display: flex; flex-direction: column; min-height: 100vh;">
   <nav style="background-color: #7011e4;">
     <div class="nav-wrapper">
-      <a href="#" class="brand-logo center">Github Reader</a>
+      <a href="#" class="brand-logo center">Light Docs</a>
     </div>
   </nav>
 
@@ -84,9 +90,6 @@
     const repo = "nepal-codes.github.io";
     const contents_url = `https://api.github.com/repos/${org}/${repo}/contents/docs`;
     updateSidebar(contents_url);
-    updateDocWindow(
-      "https://raw.githubusercontent.com/nepalcodes/nepal-codes.github.io/master/docs/CodeofConduct.md"
-    );
   }
 
   async function updateSidebar(url) {
@@ -98,12 +101,15 @@
     const goUpOneFolder = `
         <div
           class="sidebar-item waves-effect"
+          style="display: flex; align-items: center;"
           onclick=updateSidebar("${url
             .split("/")
             .slice(0, url.split("/").length - 1)
             .join("/")}")
         >
-          go up one
+          <i class="material-icons">arrow_upward</i>
+          <div style="margin-right: 16px"> </div>
+          go up one folder
         </div>
     `;
 
@@ -116,18 +122,24 @@
         return `
               <div
                 class="sidebar-item waves-effect"
+                style="display: flex; align-items: center;"
                 onclick=updateDocWindow("${document.download_url}")
               >
-                  ${document.type}: ${document.name}
+                  <i class="material-icons">text_snippet</i>
+                  <div style="margin-right: 16px"> </div>
+                  ${document.name}
               </div>
           `;
       } else {
         return `
               <div
                 class="sidebar-item waves-effect"
+                style="display: flex; align-items: center;"
                 onclick=updateSidebar("${url + "/" + document.name}")
               >
-                  ${document.type}: ${document.name}
+                  <i class="material-icons">folder</i> 
+                  <div style="margin-right: 16px"> </div>
+                  ${document.name}
               </div>
           `;
       }
