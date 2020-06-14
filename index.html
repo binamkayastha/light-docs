@@ -1,0 +1,159 @@
+<!-- markdown-it -->
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/markdown-it/11.0.0/markdown-it.min.js"
+  integrity="sha256-3mv+NUxFuBg26MtcnuN2X37WUxuGunWCCiG2YCSBjNc="
+  crossorigin="anonymous"
+></script>
+
+<!-- Compiled and minified CSS -->
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+/>
+
+<!-- Compiled and minified JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+<div style="display: flex; flex-direction: column; min-height: 100vh;">
+  <nav style="background-color: #7011e4;">
+    <div class="nav-wrapper">
+      <a href="#" class="brand-logo center">Github Reader</a>
+    </div>
+  </nav>
+
+  <div
+    style="
+      flex-grow: 1; /* Take up the reset of the height in the window */
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+    "
+  >
+    <div id="sidebar"></div>
+    <div id="docWindow">
+      Loading
+    </div>
+  </div>
+</div>
+
+<style>
+  #sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /*should match sidebar-item border-radius*/
+    /* padding: 4px;  */
+    border-right: 1px solid grey;
+  }
+  .sidebar-item {
+    padding: 16px;
+    /* background-color: lightblue; */
+    /* border: 2px solid white; */
+    /* border-radius: 4px; */
+    border-bottom: 1px solid #ccc;
+  }
+  .sidebar-item:hover {
+    background-color: #efefef;
+    /* background-color: #72a1e5; */
+  }
+  #docWindow {
+    padding: 32px;
+  }
+</style>
+
+<script>
+  // Poor persons livereload xD
+  //   setTimeout(function () {
+  //     window.location.reload(1);
+  //   }, 3000);
+  ////  }, 10000);
+
+  async function main() {
+    // Potentially use githubs markdown procesor instead
+    // Potentially add mermaid plugin
+    // https://www.npmjs.com/search?q=keywords%3Amarkdown-it-plugin%20mermaid
+    md = new markdownit({
+      //   html: true,
+      //   linkify: true,
+      //   typographer: true
+    });
+
+    const org = "nepalcodes";
+    const repo = "nepal-codes.github.io";
+    const contents_url = `https://api.github.com/repos/${org}/${repo}/contents/docs`;
+    updateSidebar(contents_url);
+    updateDocWindow(
+      "https://raw.githubusercontent.com/nepalcodes/nepal-codes.github.io/master/docs/CodeofConduct.md"
+    );
+  }
+
+  async function updateSidebar(url) {
+    console.log("Sidebar updating");
+    console.log("Sidebar url: " + url);
+    const responsePromise = await fetch(url);
+    const contents = JSON.parse(await responsePromise.text());
+
+    const goUpOneFolder = `
+        <div
+          class="sidebar-item waves-effect"
+          onclick=updateSidebar("${url
+            .split("/")
+            .slice(0, url.split("/").length - 1)
+            .join("/")}")
+        >
+          go up one
+        </div>
+    `;
+
+    const documents = Array.from(
+      contents.map((c) => createSidebarItem(c))
+    ).join("");
+    function createSidebarItem(document) {
+      console.log(document.download_url);
+      if (document.type == "file") {
+        return `
+              <div
+                class="sidebar-item waves-effect"
+                onclick=updateDocWindow("${document.download_url}")
+              >
+                  ${document.type}: ${document.name}
+              </div>
+          `;
+      } else {
+        return `
+              <div
+                class="sidebar-item waves-effect"
+                onclick=updateSidebar("${url + "/" + document.name}")
+              >
+                  ${document.type}: ${document.name}
+              </div>
+          `;
+      }
+    }
+    document.getElementById("sidebar").innerHTML = goUpOneFolder + documents;
+  }
+
+  async function updateDocWindow(url) {
+    const rawMDFile = await getMDFile(url);
+    const mdFile = md.render(rawMDFile);
+    document.getElementById("docWindow").innerHTML = mdFile;
+  }
+
+  async function getMDFile(url) {
+    const responsePromise = await fetch(url);
+    const rawMDFile = await responsePromise.text();
+    return rawMDFile;
+  }
+
+  main();
+</script>
+
+<!-- 
+  Primary: Purple 7011E4
+  Secondary: Light Blue 72A1E5
+  Highlight: Yellow FFB01F
+  Black: 232528
+  DarkBlue: 25283D
+ -->
