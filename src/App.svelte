@@ -11,26 +11,62 @@
   import * as marked from "marked";
   import SidebarItem from "./components/SidebarItem.svelte";
 
-  const org = "nepalcodes";
-  const repo = "nepal-codes.github.io";
-  let baseURL = `https://api.github.com/repos/${org}/${repo}/contents/docs`;
-  updateSidebar(baseURL);
-  let sidebarItems = ["Loading"];
-  let mdFile = "Loading";
+  let githubRepos = [
+    {
+      type: "repo",
+      name: "NepalCodes",
+      download_url:
+        "https://api.github.com/repos/nepalcodes/nepal-codes.github.io/contents/docs"
+    },
+    {
+      type: "repo",
+      name: "Handbook",
+      download_url: "https://api.github.com/repos/nepalcodes/handbook/contents/"
+    },
+    {
+      type: "repo",
+      name: "Resources",
+      download_url:
+        "https://api.github.com/repos/nepalcodes/resources/contents/"
+    }
+  ];
+  $: githubRepoURLs = githubRepos.map(repo => repo.download_url);
+  $: githubOneFolderAboveDocURLs = githubRepos.map(repo =>
+    repo.download_url
+      .split("/")
+      .slice(0, repo.download_url.split("/").length - 1)
+      .join("/")
+  );
+  let currentFolderURL = "";
+  let sidebarItems = githubRepos;
+  let mdFile = "<--- Choose Repo, Folder, or File";
 
   async function updateSidebar(url) {
-    console.log("Sidebar updating");
-    console.log("Sidebar url: " + url);
+    if (githubOneFolderAboveDocURLs.includes(url)) {
+      console.log("Updating Sidebar to GithubRepos");
+      sidebarItems = githubRepos;
+      return;
+    }
+    console.log("Updating Sidebar files and folders in this URL: " + url);
     const responsePromise = await fetch(url);
-    console.log("resp: " + responsePromise);
-    sidebarItems = JSON.parse(await responsePromise.text());
-    baseURL = url;
+    if (githubRepoURLs.includes(url)) {
+      sidebarItems = [{ type: "goUp", name: "go back to repos" }];
+    } else {
+      sidebarItems = [{ type: "goUp", name: "go up one folder" }];
+    }
+    sidebarItems = sidebarItems.concat(
+      JSON.parse(await responsePromise.text())
+    );
+
+    currentFolderURL = url;
+    mdFile = "<--- Choose Repo, Folder, or File";
     // Todo write verifing code
     // expect sidebarItems to be a list of elements with name, download_url, etc.
     // also filter based on that
   }
 
   async function updateDocWindow(url) {
+    console.log("Updating Documentation Window with this url: " + url);
     const rawMDFile = await getMDFile(url);
     mdFile = marked.default(rawMDFile);
     // Todo sanitize output HTML
@@ -41,7 +77,6 @@
   }
 
   async function getMDFile(url) {
-    console.log("GET MD FILE CALLED");
     const responsePromise = await fetch(url);
     const rawMDFile = await responsePromise.text();
     return rawMDFile;
@@ -108,17 +143,25 @@
       style=" flex-grow: 1; /* Take up the reset of the height in the window */
       display: flex; flex-direction: row; align-items: stretch; ">
       <div id="sidebar">
-        <SidebarItem
-          mdIcon="arrow_upward"
-          text="go up one folder"
-          on:click={() => {
-            updateSidebar(baseURL
-                .split('/')
-                .slice(0, baseURL.split('/').length - 1)
-                .join('/'));
-          }} />
         {#each sidebarItems as sidebarItem}
-          {#if sidebarItem.type == 'file'}
+          {#if sidebarItem.type == 'repo'}
+            <SidebarItem
+              mdIcon="book"
+              text={sidebarItem.name}
+              on:click={() => {
+                updateSidebar(sidebarItem.download_url);
+              }} />
+          {:else if sidebarItem.type == 'goUp'}
+            <SidebarItem
+              mdIcon="arrow_upward"
+              text={sidebarItem.name}
+              on:click={() => {
+                updateSidebar(currentFolderURL
+                    .split('/')
+                    .slice(0, currentFolderURL.split('/').length - 1)
+                    .join('/'));
+              }} />
+          {:else if sidebarItem.type == 'file'}
             <SidebarItem
               mdIcon="text_snippet"
               text={sidebarItem.name}
@@ -130,7 +173,7 @@
               mdIcon="folder"
               text={sidebarItem.name}
               on:click={() => {
-                updateSidebar(baseURL + '/' + sidebarItem.name);
+                updateSidebar(currentFolderURL + '/' + sidebarItem.name);
               }} />
           {/if}
         {/each}
