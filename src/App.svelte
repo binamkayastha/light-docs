@@ -9,12 +9,14 @@
   // Potentially add mermaid plugin
   // https://www.npmjs.com/search?q=keywords%3Amarkdown-it-plugin%20mermaid
   import * as marked from "marked";
+  import SidebarItem from "./components/SidebarItem.svelte";
 
   const org = "nepalcodes";
   const repo = "nepal-codes.github.io";
   let baseURL = `https://api.github.com/repos/${org}/${repo}/contents/docs`;
   updateSidebar(baseURL);
   let sidebarItems = ["Loading"];
+  let mdFile = "Loading";
 
   async function updateSidebar(url) {
     console.log("Sidebar updating");
@@ -29,14 +31,13 @@
   }
 
   async function updateDocWindow(url) {
-    console.log("UPDATE DOC WINDOW CALLED");
     const rawMDFile = await getMDFile(url);
-    console.log("RAW MD FILE");
-    console.log(rawMDFile);
-    // debugger;
-    const mdFile = marked.default(rawMDFile);
-    console.log(mdFile);
-    document.getElementById("docWindow").innerHTML = mdFile;
+    mdFile = marked.default(rawMDFile);
+    // Todo sanitize output HTML
+    // https://www.npmjs.com/package/marked
+    // Warning: 🚨 Marked does not sanitize the output HTML. Please use a
+    // sanitize library, like DOMPurify (recommended), sanitize-html or insane
+    // on the output HTML! 🚨
   }
 
   async function getMDFile(url) {
@@ -77,17 +78,6 @@
     /* padding: 4px;  */
     border-right: 1px solid grey;
   }
-  .sidebar-item {
-    padding: 16px;
-    /* background-color: lightblue; */
-    /* border: 2px solid white; */
-    /* border-radius: 4px; */
-    border-bottom: 1px solid #ccc;
-  }
-  .sidebar-item:hover {
-    background-color: #efefef;
-    /* background-color: #72a1e5; */
-  }
   #docWindow {
     padding: 32px;
   }
@@ -99,11 +89,6 @@
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" />
 
-  <!-- Compiled and minified JavaScript -->
-  <script
-    src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js">
-
-  </script>
   <!-- Icons -->
   <link
     href="https://fonts.googleapis.com/icon?family=Material+Icons"
@@ -123,46 +108,36 @@
       style=" flex-grow: 1; /* Take up the reset of the height in the window */
       display: flex; flex-direction: row; align-items: stretch; ">
       <div id="sidebar">
-        <div
-          class="sidebar-item waves-effect"
-          style="display: flex; align-items: center;"
+        <SidebarItem
+          mdIcon="arrow_upward"
+          text="go up one folder"
           on:click={() => {
             updateSidebar(baseURL
                 .split('/')
                 .slice(0, baseURL.split('/').length - 1)
                 .join('/'));
-          }}>
-          <i class="material-icons">arrow_upward</i>
-          <div style="margin-right: 16px" />
-          go up one folder
-        </div>
+          }} />
         {#each sidebarItems as sidebarItem}
           {#if sidebarItem.type == 'file'}
-            <div
-              class="sidebar-item waves-effect"
-              style="display: flex; align-items: center;"
+            <SidebarItem
+              mdIcon="text_snippet"
+              text={sidebarItem.name}
               on:click={() => {
                 updateDocWindow(sidebarItem.download_url);
-              }}>
-              <i class="material-icons">text_snippet</i>
-              <div style="margin-right: 16px" />
-              {sidebarItem.name}
-            </div>
+              }} />
           {:else if sidebarItem.type == 'dir'}
-            <div
-              class="sidebar-item waves-effect"
-              style="display: flex; align-items: center;"
+            <SidebarItem
+              mdIcon="folder"
+              text={sidebarItem.name}
               on:click={() => {
                 updateSidebar(baseURL + '/' + sidebarItem.name);
-              }}>
-              <i class="material-icons">folder</i>
-              <div style="margin-right: 16px" />
-              {sidebarItem.name}
-            </div>
+              }} />
           {/if}
         {/each}
       </div>
-      <div id="docWindow">Loading</div>
+      <div id="docWindow">
+        {@html mdFile}
+      </div>
     </div>
   </div>
 
