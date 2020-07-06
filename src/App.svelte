@@ -1,50 +1,32 @@
 <script>
-  // Poor persons livereload xD
-  //   setTimeout(function () {
-  //     window.location.reload(1);
-  //   }, 3000);
-  ////  }, 10000);
+  document.addEventListener("DOMContentLoaded", function() {
+    var elems = document.querySelectorAll(".modal");
+    var instances = M.Modal.init(elems, {});
+  });
 
   // Potentially use githubs markdown procesor instead
   // Potentially add mermaid plugin
   // https://www.npmjs.com/search?q=keywords%3Amarkdown-it-plugin%20mermaid
   import * as marked from "marked";
   import SidebarItem from "./components/SidebarItem.svelte";
+  import ConfigButton from "./components/ConfigButton.svelte";
+  import { config } from "./configStore.js";
 
-  let githubRepos = [
-    {
-      type: "repo",
-      name: "NepalCodes",
-      download_url:
-        "https://api.github.com/repos/nepalcodes/nepal-codes.github.io/contents/docs"
-    },
-    {
-      type: "repo",
-      name: "Handbook",
-      download_url: "https://api.github.com/repos/nepalcodes/handbook/contents/"
-    },
-    {
-      type: "repo",
-      name: "Resources",
-      download_url:
-        "https://api.github.com/repos/nepalcodes/resources/contents/"
-    }
-  ];
-  $: githubRepoURLs = githubRepos.map(repo => repo.download_url);
-  $: githubOneFolderAboveDocURLs = githubRepos.map(repo =>
+  $: githubRepoURLs = $config["githubRepos"].map(repo => repo.download_url);
+  $: githubOneFolderAboveDocURLs = $config["githubRepos"].map(repo =>
     repo.download_url
       .split("/")
       .slice(0, repo.download_url.split("/").length - 1)
       .join("/")
   );
   let currentFolderURL = "";
-  let sidebarItems = githubRepos;
+  $: sidebarItems = $config["githubRepos"];
   let mdFile = "<--- Choose Repo, Folder, or File";
 
   async function updateSidebar(url) {
     if (githubOneFolderAboveDocURLs.includes(url)) {
       console.log("Updating Sidebar to GithubRepos");
-      sidebarItems = githubRepos;
+      sidebarItems = $config["githubRepos"];
       return;
     }
     console.log("Updating Sidebar files and folders in this URL: " + url);
@@ -67,7 +49,8 @@
 
   async function updateDocWindow(url) {
     console.log("Updating Documentation Window with this url: " + url);
-    const rawMDFile = await getMDFile(url);
+    const responsePromise = await fetch(url);
+    const rawMDFile = await responsePromise.text();
     mdFile = marked.default(rawMDFile);
     // Todo sanitize output HTML
     // https://www.npmjs.com/package/marked
@@ -75,22 +58,9 @@
     // sanitize library, like DOMPurify (recommended), sanitize-html or insane
     // on the output HTML! 🚨
   }
-
-  async function getMDFile(url) {
-    const responsePromise = await fetch(url);
-    const rawMDFile = await responsePromise.text();
-    return rawMDFile;
-  }
 </script>
 
 <style>
-  main {
-    text-align: center;
-    padding: 1em;
-    max-width: 240px;
-    margin: 0 auto;
-  }
-
   h1 {
     color: #ff3e00;
     text-transform: uppercase;
@@ -98,11 +68,6 @@
     font-weight: 100;
   }
 
-  @media (min-width: 640px) {
-    main {
-      max-width: none;
-    }
-  }
   #sidebar {
     width: 320px;
     flex-shrink: 0;
@@ -118,24 +83,12 @@
   }
 </style>
 
-<svelte:head>
-  <!-- Compiled and minified CSS -->
-  <link
-    rel="stylesheet"
-    href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" />
-
-  <!-- Icons -->
-  <link
-    href="https://fonts.googleapis.com/icon?family=Material+Icons"
-    rel="stylesheet" />
-
-</svelte:head>
-
 <main>
   <div style="display: flex; flex-direction: column; min-height: 100vh;">
     <nav style="background-color: #7011e4;">
       <div class="nav-wrapper">
         <a href="#" class="brand-logo center">Light Docs</a>
+        <ConfigButton />
       </div>
     </nav>
 
