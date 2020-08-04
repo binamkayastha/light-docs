@@ -15,8 +15,8 @@
 
   let repoSidebarItems = [];
   let githubRepoURLs = [];
-  let githubOneFolderAboveDocURLs = "";
   let currentFolderURL = "";
+  let sidebarItems = [];
 
   $: {
     repoSidebarItems = $config["data"]["githubRepos"].map(r => {
@@ -27,16 +27,8 @@
       };
     });
     githubRepoURLs = repoSidebarItems.map(repo => repo.download_url);
-    githubOneFolderAboveDocURLs = githubRepoURLs.map(url =>
-      url
-        .split("/")
-        .slice(0, url.split("/").length - 1)
-        .join("/")
-    );
     sidebarItems = repoSidebarItems;
   }
-  // $: sidebarItems = $config["githubRepos"];
-  let sidebarItems = [];
   const SIDEBAR_STATE = {
     REPOS: "REPOS",
     TOP_LEVEL_DOC: "TOP_LEVEL_DOC",
