@@ -8,27 +8,44 @@
   // Potentially add mermaid plugin
   // https://www.npmjs.com/search?q=keywords%3Amarkdown-it-plugin%20mermaid
   import * as marked from "marked";
+
+  import { config } from "./configStore.js";
   import SidebarItem from "./components/SidebarItem.svelte";
   import ConfigButton from "./components/ConfigButton.svelte";
-  import { config } from "./configStore.js";
 
-  $: githubRepoURLs = $config["githubRepos"].map(repo => repo.download_url);
-  $: githubOneFolderAboveDocURLs = $config["githubRepos"].map(repo =>
-    repo.download_url
-      .split("/")
-      .slice(0, repo.download_url.split("/").length - 1)
-      .join("/")
-  );
+  let repoSidebarItems = [];
+  let githubRepoURLs = [];
+  let githubOneFolderAboveDocURLs = "";
   let currentFolderURL = "";
-  $: sidebarItems = $config["githubRepos"];
+
+  $: {
+    repoSidebarItems = $config["data"]["githubRepos"].map(r => {
+      return {
+        type: "repo",
+        name: r["name"] ? r["name"] : r["repo"],
+        download_url: `https://api.github.com/repos/${r["owner"]}/${r["repo"]}/contents/${r["docsLocation"]}`
+      };
+    });
+    githubRepoURLs = repoSidebarItems.map(repo => repo.download_url);
+    githubOneFolderAboveDocURLs = githubRepoURLs.map(url =>
+      url
+        .split("/")
+        .slice(0, url.split("/").length - 1)
+        .join("/")
+    );
+    sidebarItems = repoSidebarItems;
+  }
+  // $: sidebarItems = $config["githubRepos"];
+  let sidebarItems = [];
+  const SIDEBAR_STATE = {
+    REPOS: "REPOS",
+    TOP_LEVEL_DOC: "TOP_LEVEL_DOC",
+    LOWER_LEVEL_DOC: "LOWER_LEVEL_DOC"
+  };
+  let sidebarState = SIDEBAR_STATE.REPOS;
   let mdFile = "<--- Choose Repo, Folder, or File";
 
   async function updateSidebar(url) {
-    if (githubOneFolderAboveDocURLs.includes(url)) {
-      console.log("Updating Sidebar to GithubRepos");
-      sidebarItems = $config["githubRepos"];
-      return;
-    }
     console.log("Updating Sidebar files and folders in this URL: " + url);
     const responsePromise = await fetch(url);
     if (githubRepoURLs.includes(url)) {
@@ -103,16 +120,22 @@
               text={sidebarItem.name}
               on:click={() => {
                 updateSidebar(sidebarItem.download_url);
+                sidebarState = SIDEBAR_STATE.TOP_LEVEL_DOC;
               }} />
           {:else if sidebarItem.type == 'goUp'}
             <SidebarItem
               mdIcon="arrow_upward"
               text={sidebarItem.name}
               on:click={() => {
-                updateSidebar(currentFolderURL
-                    .split('/')
-                    .slice(0, currentFolderURL.split('/').length - 1)
-                    .join('/'));
+                if (sidebarState == SIDEBAR_STATE.TOP_LEVEL_DOC) {
+                  sidebarItems = repoSidebarItems;
+                  sidebarState = SIDEBAR_STATE.REPOS;
+                } else {
+                  updateSidebar(currentFolderURL
+                      .split('/')
+                      .slice(0, currentFolderURL.split('/').length - 1)
+                      .join('/'));
+                }
               }} />
           {:else if sidebarItem.type == 'file'}
             <SidebarItem
@@ -127,6 +150,7 @@
               text={sidebarItem.name}
               on:click={() => {
                 updateSidebar(currentFolderURL + '/' + sidebarItem.name);
+                sidebarState = SIDEBAR_STATE.LOWER_LEVEL_DOC;
               }} />
           {/if}
         {/each}

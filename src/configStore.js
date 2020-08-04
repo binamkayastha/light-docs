@@ -1,17 +1,26 @@
 import { writable } from "svelte/store";
+import { validator } from "@exodus/schemasafe";
 
 export const config = writable(getConfigUrlParam());
 
+export function setConfigUrlParam(newConfigValue) {
+  console.log(newConfigValue);
+  window.location = "/?config=" + encodeURI(JSON.stringify(newConfigValue));
+}
+
 function getConfigUrlParam() {
   const DEFAULT_CONFIG = {
-    githubRepos: [
-      {
-        type: "repo",
-        name: "NepalCodes",
-        download_url:
-          "https://api.github.com/repos/nepalcodes/nepal-codes.github.io/contents/docs",
-      },
-    ],
+    version: "v0.1",
+    data: {
+      githubRepos: [
+        {
+          name: "LightDocs",
+          owner: "binamkayastha",
+          repo: "light-docs",
+          docsLocation: "docs",
+        },
+      ],
+    },
   };
   const rawConfigParam = getUrlParam("config", null);
   const configParam = rawConfigParam

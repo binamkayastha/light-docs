@@ -1,9 +1,38 @@
 <script>
-  import { config } from "../configStore.js";
+  import { config, setConfigUrlParam } from "../configStore.js";
+  import { validateConfig } from "../schemas.js";
+  import { onMount } from "svelte";
+
+  let error_msg = "";
+
+  onMount(async () => {
+    isConfigValid();
+  });
+
   function onSave() {
-    $config = JSON.parse(document.getElementById("config-textarea").value);
-    console.log("/?config=" + encodeURI(JSON.stringify($config)));
-    window.location = "/?config=" + encodeURI(JSON.stringify($config));
+    if (!isConfigValid()) {
+      return;
+    }
+    const configObj = JSON.parse(
+      document.getElementById("config-textarea").value
+    );
+    $config = configObj;
+    setConfigUrlParam($config);
+  }
+
+  function isConfigValid() {
+    console.log("isConfigValid Called");
+    error_msg = "";
+    try {
+      var configObj = JSON.parse(
+        document.getElementById("config-textarea").value
+      );
+      console.log(validateConfig(configObj));
+    } catch (error) {
+      error_msg = error;
+      return false;
+    }
+    return true;
   }
 </script>
 
@@ -29,10 +58,16 @@
   <div id="modal1" class="modal">
     <div class="modal-content">
       <h4>Configuration</h4>
-      <textarea id="config-textarea" class="materialize-textarea">
+      <textarea
+        id="config-textarea"
+        class="materialize-textarea"
+        on:input={() => isConfigValid()}>
         {JSON.stringify($config, null, 2)}
       </textarea>
     </div>
+    {#if error_msg}
+      <div class="red">{error_msg}</div>
+    {/if}
     <div class="bottom-part">
       <div class="btn-flat modal-close waves-effect waves-green">Cancel</div>
       <div
