@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@exodus/schemasafe": "^1.0.0-alpha.4",
-    "marked": "^1.1.0",
+    "marked": "^4.0.10",
     "materialize-css": "^1.0.0-rc.2",
     "sirv-cli": "^0.4.4"
   }
